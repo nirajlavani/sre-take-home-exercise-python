@@ -4,6 +4,7 @@ import sys
 import time
 from collections import defaultdict
 
+
 # Function to load configuration from the YAML file
 def load_config(file_path):
     try:
@@ -16,18 +17,26 @@ def load_config(file_path):
 
 # Function to perform health checks
 def check_health(endpoint):
-    url = endpoint['url']
-    method = endpoint.get('method')
+    url = endpoint.get("url")
+    method = endpoint.get('method', 'GET').upper()
     headers = endpoint.get('headers')
     body = endpoint.get('body')
 
     try:
+        start = time.time()
         response = requests.request(method, url, headers=headers, json=body)
-        if 200 <= response.status_code < 300:
+        duration = (time.time() - start) * 1000
+
+        if duration <= 500 and 200 <= response.status_code < 300:
             return "UP"
         else:
+            print(f"DOWN: {url}")
+            print(f" - Status: {response.status_code}")
+            print(f" - Time: {int(duration)}ms")
             return "DOWN"
     except requests.RequestException:
+        print(f"DOWN: {url}")
+        print(f" - Status: {response.status_code}")
         return "DOWN"
 
 # Main function to monitor endpoints
@@ -37,9 +46,9 @@ def monitor_endpoints(file_path):
 
     while True:
         for endpoint in config:
-            domain = endpoint["url"].split("//")[-1].split("/")[0]
             result = check_health(endpoint)
 
+            domain = endpoint["url"].split("//")[-1].split("/")[0].split(":")[0]
             domain_stats[domain]["total"] += 1
             if result == "UP":
                 domain_stats[domain]["up"] += 1
