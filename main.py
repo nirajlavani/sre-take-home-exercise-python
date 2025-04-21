@@ -36,11 +36,11 @@ def check_health(endpoint):
             return "DOWN"
     except requests.RequestException:
         print(f"DOWN: {url}")
-        print(f" - Status: {response.status_code}")
+        print(f" - Error: {e}")
         return "DOWN"
 
 # Main function to monitor endpoints
-def monitor_endpoints(file_path):
+def monitor_endpoints(file_path, frequency):
     config = load_config(file_path)
     domain_stats = defaultdict(lambda: {"up": 0, "total": 0})
 
@@ -59,7 +59,7 @@ def monitor_endpoints(file_path):
             print(f"{domain} has {availability}% availability percentage")
 
         print("---")
-        time.sleep(15)
+        time.sleep(frequency)
 
 # Entry point of the program
 if __name__ == "__main__":
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         sys.exit(1)
     try:
         config_file = sys.argv[1]
-        monitor_endpoints(config_file)
+        monitor_endpoints(config_file, 15)
 
     except KeyboardInterrupt:
         print("Monitoring stopped by user.")
