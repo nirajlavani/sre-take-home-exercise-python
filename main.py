@@ -1,12 +1,18 @@
 import yaml
 import requests
+import sys
 import time
 from collections import defaultdict
 
 # Function to load configuration from the YAML file
 def load_config(file_path):
-    with open(file_path, 'r') as file:
-        return yaml.safe_load(file)
+    try:
+        with open(file_path, 'r') as file:
+            return yaml.safe_load(file)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Config file not found: {file_path}")
+    except yaml.YAMLError as e:
+        raise ValueError(f"Invalid YAML format: {e}")
 
 # Function to perform health checks
 def check_health(endpoint):
@@ -48,14 +54,15 @@ def monitor_endpoints(file_path):
 
 # Entry point of the program
 if __name__ == "__main__":
-    import sys
-
     if len(sys.argv) != 2:
-        print("Usage: python monitor.py <config_file_path>")
+        print("Usage: python main.py <config_file_path>")
         sys.exit(1)
-
-    config_file = sys.argv[1]
     try:
+        config_file = sys.argv[1]
         monitor_endpoints(config_file)
+
     except KeyboardInterrupt:
-        print("\nMonitoring stopped by user.")
+        print("Monitoring stopped by user.")
+        sys.exit(0)
+    except Exception as e:
+        print(f"An error has occurred: {e}")
