@@ -34,7 +34,7 @@ def check_health(endpoint):
             print(f" - Status: {response.status_code}")
             print(f" - Time: {int(duration)}ms")
             return "DOWN"
-    except requests.RequestException:
+    except requests.RequestException as e:
         print(f"DOWN: {url}")
         print(f" - Error: {e}")
         return "DOWN"
