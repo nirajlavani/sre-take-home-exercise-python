@@ -1,6 +1,7 @@
 import yaml
 import requests
 import sys
+import json
 import time
 from collections import defaultdict
 
@@ -22,33 +23,53 @@ def check_health(endpoint):
     headers = endpoint.get('headers')
     body = endpoint.get('body')
 
-    try:
-        start = time.time()
-        response = requests.request(method, url, headers=headers, json=body)
-        duration = (time.time() - start) * 1000
+    # Ensure endpoint body, if given, is properly formatted. 
+    if isinstance(body, str):
+        try:
+            body = json.loads(body)
+        except json.JSONDecodeError:
+            print(f"Invalid JSON body: {body}")
+            body = None
 
-        if duration <= 500 and 200 <= response.status_code < 300:
+    # Perform the API request and print request details
+    try:
+        response = requests.request(method, url, headers=headers,
+                                     json=body, timeout=0.5)
+
+        if 200 <= response.status_code < 300:
+            print(f"UP: {url}")
+            print(f" - Status: {response.status_code}")
+            print()
             return "UP"
         else:
             print(f"DOWN: {url}")
             print(f" - Status: {response.status_code}")
-            print(f" - Time: {int(duration)}ms")
+            print(f" - Response: {response.text}")
+            print()
             return "DOWN"
+    except requests.Timeout:
+        print(f"DOWN: {url}")
+        print(" - Error: Request timed out (over 500ms)")
+        print()
+        return "DOWN"
     except requests.RequestException as e:
         print(f"DOWN: {url}")
         print(f" - Error: {e}")
+        print()
         return "DOWN"
 
 # Main function to monitor endpoints
-def monitor_endpoints(file_path, frequency):
+def monitor_endpoints(file_path, frequency=15):
     config = load_config(file_path)
     domain_stats = defaultdict(lambda: {"up": 0, "total": 0})
 
     while True:
         for endpoint in config:
-            result = check_health(endpoint)
 
-            domain = endpoint["url"].split("//")[-1].split("/")[0].split(":")[0]
+            # Save UP and TOTAL requests with a dictionary
+            result = check_health(endpoint)
+            domain = endpoint[
+                "url"].split("//")[-1].split("/")[0].split(":")[0]
             domain_stats[domain]["total"] += 1
             if result == "UP":
                 domain_stats[domain]["up"] += 1
@@ -68,7 +89,7 @@ if __name__ == "__main__":
         sys.exit(1)
     try:
         config_file = sys.argv[1]
-        monitor_endpoints(config_file, 15)
+        monitor_endpoints(config_file)
 
     except KeyboardInterrupt:
         print("Monitoring stopped by user.")
