@@ -50,6 +50,14 @@ dev-sre-take-home-exercise-rubric.us-east-1.recruiting-public.fetchrewards.com h
 
 ## Code Changes
 A good bit of changes were made to the original script.
+### Identifying Issues
+There were many issues at first glance.
+- Little to no exception handling
+- No logging
+- Missing functionality
+
+I first started with fixing the Entry Point of the script then working on each function call in order of execution. Once I got the script running, I wrote in some safeguards for any potential pitfalls (invalid JSON body, timeout exceptions, invalid yaml path, etc.). One of the final steps was to ensure readability (write comments, make sure the character count per line doesn't surpass 80, etc.) Below is a summary of the changes made. 
+
 ### Major Changes
 - Error handling in `load_config()` to ensure the user-provided yaml file was found and parsed successfully.
 - In `monitor_endpoints()`, isolated the domain name from the port by appending `.split(":")[0]`. This could also be done "cleaner" with `urlparse(endpoint["url"]).hostname` but requires an additional import. 
